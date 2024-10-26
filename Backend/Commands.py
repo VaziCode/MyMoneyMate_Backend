@@ -1,14 +1,12 @@
-import os
-import sys
 import uuid
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, MessageHandler, filters
-import logging
+import telegram
 # Configure logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+
+# logging.basicConfig(
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+# )
+# logger = logging.getLogger(__name__)
 
 from Backend import config
 from backend import Database as db
@@ -16,9 +14,7 @@ from Backend.Responses import responses, get_price, get_category, valid_email, h
 from Backend.config import (
     TOKEN,
     BOT_USERNAME,
-    Category,
     Button,
-    Status,
     Command,
     categories_config,
     categories_config_dict,
@@ -27,7 +23,6 @@ from Backend.config import (
     LOGIN_NAME_MIN_LENGTH,
     LOGIN_NAME_MAX_LENGTH
 )
-from Backend.backend import Database, get_categories, write_category, remove_category, validate_input
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -43,13 +38,16 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 
-from Backend.backend import Database, get_categories, write_category, remove_category, validate_input
+from Backend.backend import Database, get_categories, write_category, remove_category
+
 db = Database()  # Ensure the database connection is initialized
 
 # # ------------------------------------------------------- #
 # # ---------------------- Commands ----------------------- #
 # # ------------------------------------------------------- #
 
+
+""" '/new' add a new expense --> Usage: /new <category> <price> """
 async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     command = update.message.text.split()[0][1:].lower()
     if command == Command.STATS.value:
@@ -91,63 +89,9 @@ def handle_message(text: str) -> str:
     else:  # default
         return 'Sorry 😢 I don\'t understand...'
     
-# def handle_message(text: str) -> str:
-#     processed: str = text.lower()
-#
-#     if 'hello' or 'hi' or 'hey' in text:
-#         return 'Hey there!'
-#     elif 'how are you' in text:
-#         return 'I\'m fine, thanks!'
-#     # Add responses ...
-#
-#     else:  # default
-#         return 'Sorry 😢 I don\'t understand...'
-    
-# async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     message_type: str = update.message.chat.type
-#     text: str = update.message.text
-#     user_id = update.message.from_user.id
-#     group_id = update.message.chat.id
-#
-#     logger.info(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
-#
-#     if message_type == 'group' and config.BOT_USERNAME in text:
-#         new_text = text.replace(config.BOT_USERNAME, '').strip()
-#         response = handle_message(new_text)
-#         await update.message.reply_text(response)
-#         return
-#
-#     if text.startswith('/'):
-#         await handle_command(update, context)
-#     else:
-#         try:
-#             amount = float(text)
-#             context.user_data['amount'] = amount
-#             context.user_data['user_id'] = user_id
-#             context.user_data['group_id'] = group_id
-#
-#             logger.info(f"Stored amount: {amount}, user_id: {user_id}, group_id: {group_id}")
-#
-#             categories = config.categories_config_dict
-#             keyboard = [
-#                 [InlineKeyboardButton(categories[cat], callback_data=cat) for cat in row]
-#                 for row in [
-#                     ['Food', 'Groceries', 'Transport'],
-#                     ['Rent', 'Insurance', 'Health'],
-#                     ['Education', 'Entertainment', 'Travel'],
-#                     ['Pet', 'Childcare', 'Gas'],
-#                     ['Shopping', 'Clothing', 'Other'],
-#                     ['Cancel']
-#                 ]
-#             ]
-#             reply_markup = InlineKeyboardMarkup(keyboard)
-#             await update.message.reply_text("Select a category for the expense:", reply_markup=reply_markup)
-#         except ValueError:
-#             await update.message.reply_text("Please enter a valid amount.")
-#             logger.error("Invalid amount entered")
 
 
-
+"""Handle the callback data from the inline keyboard."""
 async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         message_type: str = update.message.chat.type
@@ -155,7 +99,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         user_id = update.message.from_user.id
         group_id = update.message.chat.id
 
-        logger.info(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
+        # logger.info(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
 
         if message_type == 'group' and config.BOT_USERNAME in text:
             new_text = text.replace(config.BOT_USERNAME, '').strip()
@@ -172,7 +116,7 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 context.user_data['user_id'] = user_id
                 context.user_data['group_id'] = group_id
 
-                logger.info(f"Stored amount: {amount}, user_id: {user_id}, group_id: {group_id}")
+                # logger.info(f"Stored amount: {amount}, user_id: {user_id}, group_id: {group_id}")
 
                 categories = config.categories_config_dict
                 keyboard = [
@@ -191,10 +135,10 @@ async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             except ValueError:
                 response = handle_message(text)
                 await update.message.reply_text(response)
-                logger.error("Invalid amount entered")
+                # logger.error("Invalid amount entered")
 
 
-
+"""Handle the callback data from the inline keyboard."""
 async def handle_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         amount = float(update.message.text)
@@ -207,7 +151,7 @@ async def handle_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         context.user_data['group_id'] = group_id
         
         # Log the stored context data
-        logger.info(f"Stored amount: {amount}, user_id: {user_id}, group_id: {group_id}")
+        # logger.info(f"Stored amount: {amount}, user_id: {user_id}, group_id: {group_id}")
         
         # Create category selection buttons with icons
         categories = config.categories_config_dict  # Use the dictionary with combined text and icons
@@ -230,7 +174,7 @@ async def handle_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("Select a category for the expense:", reply_markup=reply_markup)
     except ValueError:
         await update.message.reply_text("Please enter a valid amount.")
-        logger.error("Invalid amount entered")
+        # logger.error("Invalid amount entered")
         
 
 
@@ -244,6 +188,8 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ------------------------------------------------------- #
 # ---------------------- Commands ----------------------- #
 # ------------------------------------------------------- #
+
+""" '/new' add a new expense --> Usage: /new <category> <price> """
 async def new_expense_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the /new command to add a new expense."""
     try:
@@ -262,10 +208,12 @@ async def new_expense_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         group_id = update.message.chat.id
         
         db.new_expense(user_id, group_id, category, price)
-        await update.message.reply_text(f"Added expense: {category} - {price}")
+        await update.message.reply_text(f"Added expense: {category}  {price}")
     except Exception as e:
         await update.message.reply_text(f"Error: {e}")
-        
+
+
+""" '/start' get information to how to use the bot """
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Inform user about what this bot can do and create group for them in DB."""
 
@@ -292,10 +240,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 
+""" '/help' get information to how to use the bot """
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(help_response)
 
 
+""" '/signin LOGIN_NAME' sign-in the user with given login_name into DB (for permissions to website) """
 async def sign_in(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ '/signin LOGIN_NAME' sign-in the user with given login_name into DB (for permissions to website) """
     # get parameters of sender for new row in 'users' table
@@ -371,6 +321,7 @@ async def sign_in(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     return
 
 
+""" '/setLogin ....' - set a new login_name for the user """
 async def set_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ '/setLogin ....' - set a new login_name for the user """
     
@@ -391,6 +342,8 @@ async def set_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"hey {update.message.from_user.first_name}, your new login_name has been updated to: '{succeed}'")
 
 
+
+""" '/getLogin' - send the user his login_name """
 async def get_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ '/getLogin' - send the user his login_name """
     
@@ -406,6 +359,7 @@ async def get_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"hey {update.message.from_user.first_name}, please sign-in first using the next command: '/{Command.SIGN_IN.value} YOUR_LOGIN_NAME''")
 
 
+""" '/setPassword ....' - set a new password for the user """
 async def set_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ '/setPassword ....' - set a new password for the user """
     
@@ -433,6 +387,8 @@ async def set_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"hey {update.message.from_user.first_name}, your new password has been updated to: '{succeed}'")
 
 
+
+""" '/getPassword' - send the user his password in private chat """
 async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """ '/getPassword' - send the user his password in private chat """
     
@@ -455,6 +411,7 @@ async def get_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             f"hey {update.message.from_user.first_name}, please sign-in first using the next command: '/{Command.SIGN_IN.value} YOUR_LOGIN_NAME''")
 
 
+"""Show the expenses of the group."""
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
         [
@@ -488,14 +445,19 @@ async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(deleted)
 
 
+"""Export the expenses of a given month as an excel file."""
 async def export(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.chat.type == 'private':
         print(update.message.chat.id)
     else:
-        db.toExcel(update.message.chat.id)
-        await context.bot.send_document(chat_id=update.message['chat']['id'], document=open('expenses.xlsx', 'rb'))
+        try:
+            db.toExcel(update.message.chat.id)
+            await context.bot.send_document(chat_id=update.message['chat']['id'], document=open('expenses.xlsx', 'rb'))
+        except Exception as e:
+            print(f"Error : {e}")
 
 
+"""Calculate the breakeven of the group."""
 async def brake_even(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.chat.type == 'private':
         await update.message.reply_text(f'This bot is available only for groups')
@@ -507,33 +469,22 @@ async def brake_even(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     await update.message.reply_text(response)
 
 
-# async def add_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-# 	if update.message.chat.type == 'private':
-# 		group_id = update.message.from_user.id
-# 	else:
-# 		group_id = update.message.chat.id
-#
-# 	try:
-# 		new_category = update.message.text.split()
-# 		added = write_category(group_id, new_category[1])
-# 		await update.message.reply_text(added)
-# 	except:
-# 		await update.message.reply_text("an error has occured")
+"""Add a new expense category."""
 async def add_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the /add_category command to add a new expense category."""
     try:
-        args = update.edited_message.text.split()
+        args = update.message.text.split()
         if len(args) < 2:
             await update.message.reply_text("Usage: /add_category <category_name>")
             return
-        
+
         category_name = args[1]
-        
+
         # Add category to the database (you'll need a method in your backend to handle this)
         db.add_category(category_name)
-        await update.edited_message.reply_text(f"Added new category: {category_name}")
+        await update.message.reply_text(f"Added new category: {category_name}")
     except Exception as e:
-        await update.edited_message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {e}")
 
 async def delete_category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.chat.type == 'private':

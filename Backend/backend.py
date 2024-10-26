@@ -3,8 +3,10 @@ import random
 import json
 import string
 import psycopg2
+
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from collections import defaultdict
 
 from Backend import config
@@ -73,10 +75,6 @@ class Database:
         )
         self.conn.commit()
     
-    # def create_usergroups(self, user_id, group_id, is_group_admin) -> None:
-    #     ''' create connection (row) in 'usergroups' table '''
-    #     self.cur.execute(f"INSERT INTO usergroups (fk_user_id, fk_group_id, role) VALUES ('{user_id}', '{group_id}', '{is_group_admin}')")
-    #     self.conn.commit()
     
     def new_expense(self, user_id, group_id, category, price):
         """Insert a new expense into the userproducts table."""
@@ -92,17 +90,6 @@ class Database:
         )
         self.conn.commit()
     
-    # def new_expense(self, user_id, group_id, category, price):
-    #     """Insert a new expense into the userproducts table."""
-    #     self.cur.execute(
-    #         "INSERT INTO userproducts (fk_user_id, fk_group_id, category_name, amount) VALUES (%s, %s, %s, %s)",
-    #         (user_id, group_id, category, price)
-    #     )
-    #     self.conn.commit()
-        
-    # def new_expense(self, user_id,group_id, category, price):
-    #     self.cur.execute("INSERT INTO userproducts (fk_user_id,fk_group_id,category_name,amount) VALUES (%s, %s, %s ,%s)",(user_id, group_id,category, price))
-    #     self.conn.commit()
 
     # -------------------- GETs ------------------
     def get_password(self, user_id) -> str:
@@ -241,11 +228,31 @@ class Database:
         
         return "Succesfuly deleted!"
 
+    # def toExcel(self, group_id):
+    #     query = f"select u.user_name as user, category_name as category, amount as price from userproducts up join users u on up.fk_user_id = u.pk_id where fk_group_id = {group_id}"
+    #     df = pd.read_sql(query, self.conn)
+    #     try:
+    #         df.to_excel("expenses.xlsx", index=False)
+    #     except Exception as e:
+    #         print(f"Error export data: {e}")
+    # def toExcel(self, group_id):
+    #     query = f"select u.user_name as user, category_name as category, amount as price from userproducts up join users u on up.fk_user_id = u.pk_id where fk_group_id = {group_id}"
+    #     df = pd.read_sql(query, self.conn)
+    #     try:
+    #         df.to_excel("expenses.xlsx", index=False)
+    #         print("Data successfully exported to expenses.xlsx")
+    #     except Exception as e:
+    #         print(f"Error exporting data: {e}")
     def toExcel(self, group_id):
-        query = f"select u.user_name as user, category_name as category, amount as price from userproducts up join users u on up.fk_user_id = u.pk_id where fk_group_id = {group_id}"
+        query = f"SELECT u.user_name AS user, category_name AS category, amount AS price FROM userproducts up JOIN users u ON up.fk_user_id = u.pk_id WHERE fk_group_id = {group_id}"
         df = pd.read_sql(query, self.conn)
-        df.to_excel("expenses.xlsx", index=False)  
-
+        try:
+            # Specify the engine as 'xlsxwriter'
+            df.to_excel("expenses.xlsx", index=False, engine="xlsxwriter")
+            print("Data successfully exported to expenses.xlsx")
+        except Exception as e:
+            print(f"Error exporting data: {e}")
+            
     def piechart(self, group_id, date):
         if date == "This Month":
             query = f"SELECT category_name, SUM(amount) FROM userproducts where fk_group_id = {group_id} AND EXTRACT(MONTH FROM date_created) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM date_created) = EXTRACT(YEAR FROM CURRENT_DATE) GROUP BY category_name"
@@ -297,6 +304,7 @@ class Database:
            self.cur.execute(f'SELECT SUM(amount) FROM userproducts where fk_group_id = {group_id}') 
         return self.cur.fetchone()[0]
 
+
     def brake_even(self, group_id):
         
         self.cur.execute(f"select u.user_name, sum(amount)from userproducts up join users u on up.fk_user_id = u.pk_id where fk_group_id = {group_id} group by u.user_name")
@@ -328,8 +336,17 @@ class Database:
                             b1[1] = b1[1] + b2[1]
                             b2[1] = 0
         return result
-
-
+    
+    def add_category(self, category_name):
+        try:
+            # Assuming you have a table called "categories" in your database
+            query = "INSERT INTO categories (category_name) VALUES (%s)"
+            cursor = self.conn.cursor()
+            cursor.execute(query, (category_name,))
+            self.conn.commit()
+            cursor.close()
+        except Exception as e:
+            print(f"Error adding category to database: {e}")
     # end of class
 
 
@@ -352,16 +369,17 @@ def write_category(group_id, new_category):
     if group_id in data:
         if new_category in data[group_id] or new_category in categories_config:
             return "Category already exists!"
-        else: 
+        else:
             data[group_id].append(new_category) # add new category to the group
 
-    # group not exist. add new group    
+    # group not exist. add new group
     else:
         data[group_id] = [new_category]
     # write the updated dictionary to the same JSON file
     with open("categories.json", "w") as f:
         json.dump(data, f)
     return "Category added successfuly!"
+
 
 
 def get_categories(group_id):
@@ -378,6 +396,7 @@ def get_categories(group_id):
         with open("categories.json", "w") as f:
             f.write(json_string)
         return []
+
 
 
 def remove_category(group_id, category):

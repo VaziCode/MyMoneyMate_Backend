@@ -4,7 +4,7 @@ import sys
 import uuid
 
 from Backend import Commands, Responses, config
-from Backend.Commands import logger
+# from Backend.Commands import logger
 from Backend.Responses import responses, get_price, get_category, valid_email, help_response
 from Backend.config import (
     TOKEN,
@@ -37,81 +37,6 @@ from telegram.ext import (
 )
 
 
-# def handle_message(text: str) -> str:
-#     processed: str = text.lower()
-#
-#     if 'hello' or 'hi' or 'hey' in text:
-#         return 'Hey there!'
-#     elif 'how are you' in text:
-#         return 'I\'m fine, thanks!'
-#     # Add responses ...
-#
-#     else:# default
-#         return 'I don\'t understand...'
-
-# async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     message_type: str = update.message.chat.type
-#     text: str = update.message.text
-#     print(f'User ({update.message.chat.id}) in {message_type}: "{text}"')
-#
-#     if message_type == 'group':
-#         if config.BOT_USERNAME in text:
-#             new_text = str = text.replace(config.BOT_USERNAME, '').strip()
-#             response = handle_message(new_text)
-#         else:
-#             return
-#     else:
-#         response = handle_message(text)
-#     print('Bot: ', response)
-#     await update.message.reply_text(response)
-#
-#
-#     group_admin_flag = False #flag if the user is group admin
-#     group_type = update.message.chat.type
-#     if group_type == 'private':
-#         group_id = update.message.from_user.id
-#         group_name = update.message.from_user.first_name
-#         group_admin_flag = True
-#     else:
-#         group_id = update.message.chat.id
-#         group_name = update.message.chat.title
-#         chat_admins = await update.effective_chat.get_administrators() #get administrators list
-#         if update.effective_user in (admin.user for admin in chat_admins): #if sender is admin
-#             group_admin_flag = True
-#
-#     user_name = update.message.from_user.first_name
-#     user_id = update.message.from_user.id
-#
-#     # check if user and group exists:
-#
-#     response = db.is_exists(user_id, user_name, group_id, group_name, group_admin_flag, update)
-#     if response:
-#         await update.message.reply_text(response) #user doesn't exists
-#         return
-#
-#     all_categories = categories_config + get_categories(str(group_id))
-#
-#     is_invalid_input = validate_input(update.message.text)
-#     if is_invalid_input:
-#         pass #if invalid input - do nothing for now
-#         #await update.message.reply_text(is_invalid_input)
-#
-#     else:
-#         keyboard = [[]]
-#         j = 0
-#         for i, item in enumerate(all_categories):
-#             if i % 3 == 0 and i != 0:
-#                 keyboard.append([])
-#                 j += 1
-#             if item in categories_config:
-#                 keyboard[j].append(InlineKeyboardButton(categories_config_dict[item], callback_data=item))
-#             else:
-#                 keyboard[j].append(InlineKeyboardButton(item, callback_data=item))
-#
-#         keyboard[j].append(InlineKeyboardButton("Cancel ❌", callback_data="cancel"))
-#         reply_markup = InlineKeyboardMarkup(keyboard)
-#
-#         await update.message.reply_text(update.message.text, reply_markup=reply_markup)
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -146,7 +71,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = context.user_data.get('user_id')
     group_id = context.user_data.get('group_id')
 
-    logger.info(f"Retrieved amount: {amount}, user_id: {user_id}, group_id: {group_id}, category: {category}")
+    # logger.info(f"Retrieved amount: {amount}, user_id: {user_id}, group_id: {group_id}, category: {category}")
 
     if amount is None or user_id is None or group_id is None:
         await query.edit_message_text(text="Please enter an amount first.")
@@ -154,11 +79,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     try:
         db.new_expense(user_id, group_id, category, amount)
-        await query.edit_message_text(text=f"Added expense: {category} - {amount}")
-        logger.info(f"Expense added: {category} - {amount} for user_id: {user_id}, group_id: {group_id}")
+        await query.edit_message_text(text=f"Added expense: {category}  {amount}")
+        # logger.info(f"Expense added: {category} - {amount} for user_id: {user_id}, group_id: {group_id}")
     except Exception as e:
         await query.edit_message_text(text=f"Error: {e}")
-        logger.error(f"Error adding expense: {e}")
+        # logger.error(f"Error adding expense: {e}")
         
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
